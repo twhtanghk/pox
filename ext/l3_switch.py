@@ -25,7 +25,7 @@ switch:
   ovs-vsctl set-controller tcp:CONTROLLER_IP:6633
 
 controller:
-  ./pox.py l3_switch info.packet_dump log.level --DEBUG
+  ./pox.py l3_switch --fakeways=192.168.64.2 info.packet_dump log.level --DEBUG
 
 1) Keep a table that maps IP address to switch dpid, port, mac.
    Stock this table using information from ARP and IP packets.
@@ -102,7 +102,7 @@ class l3_switch (EventMixin):
   def __init__ (self, fakeways = [], arp_for_unknowns = False, wide = False):
     # These are "fake gateways" -- we'll answer ARPs for them with MAC
     # of the switch they're connected to.
-    self.fakeways = set(fakeways)
+    self.fakeways = fakeways
 
     # If True, we create "wide" matches.  Otherwise, we create "narrow"
     # (exact) matches.
@@ -205,6 +205,8 @@ class l3_switch (EventMixin):
 
       # Try to forward
       dstaddr = packet.next.dstip
+      if dstaddr not in self.arpTable:
+        dstaddr = self.fakeways[0]
       if dstaddr in self.arpTable:
         # We have info about what port to send it out on...
 
